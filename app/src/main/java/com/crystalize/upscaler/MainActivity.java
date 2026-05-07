@@ -10,8 +10,6 @@ import android.graphics.Canvas;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
-import android.graphics.RenderEffect;
-import android.graphics.Shader;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,11 +27,8 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
@@ -55,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
     private Bitmap originalBitmap = null;
     private Bitmap upscaledBitmap = null;
     private int selectedScale = 2;
-    private boolean showingUpscaled = false;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -77,7 +71,6 @@ public class MainActivity extends AppCompatActivity {
         bindViews();
         setupListeners();
 
-        // Handle share intent
         Intent intent = getIntent();
         if (Intent.ACTION_SEND.equals(intent.getAction())) {
             Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
@@ -116,18 +109,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupListeners() {
         dropZone.setOnClickListener(v -> pickImage());
-
         tabOriginal.setOnClickListener(v -> switchTab(false));
         tabUpscaled.setOnClickListener(v -> { if (upscaledBitmap != null) switchTab(true); });
-
         scale2x.setOnClickListener(v -> setScale(2));
         scale3x.setOnClickListener(v -> setScale(3));
         scale4x.setOnClickListener(v -> setScale(4));
-
         sharpSlider.setOnSeekBarChangeListener(new SimpleSeekListener(sharpVal));
         denoiseSlider.setOnSeekBarChangeListener(new SimpleSeekListener(denoiseVal));
         detailSlider.setOnSeekBarChangeListener(new SimpleSeekListener(detailVal));
-
         upscaleBtn.setOnClickListener(v -> startUpscale());
         downloadBtn.setOnClickListener(v -> downloadImage());
         resetLink.setOnClickListener(v -> resetApp());
@@ -140,12 +129,6 @@ public class MainActivity extends AppCompatActivity {
                 permissionLauncher.launch(new String[]{Manifest.permission.READ_MEDIA_IMAGES});
                 return;
             }
-        } else {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED) {
-                permissionLauncher.launch(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE});
-                return;
-            }
         }
         imagePickerLauncher.launch("image/*");
     }
@@ -155,7 +138,6 @@ public class MainActivity extends AppCompatActivity {
             try {
                 BitmapFactory.Options opts = new BitmapFactory.Options();
                 opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                // Limit max dimension to avoid OOM
                 opts.inJustDecodeBounds = true;
                 BitmapFactory.decodeStream(getContentResolver().openInputStream(uri), null, opts);
                 int maxDim = 2048;
@@ -164,11 +146,7 @@ public class MainActivity extends AppCompatActivity {
                 opts.inJustDecodeBounds = false;
                 opts.inSampleSize = sample;
                 Bitmap bmp = BitmapFactory.decodeStream(getContentResolver().openInputStream(uri), null, opts);
-
-                if (bmp == null) {
-                    mainHandler.post(() -> showToast("Failed to load image"));
-                    return;
-                }
+                if (bmp == null) { mainHandler.post(() -> showToast("Failed to load image")); return; }
                 originalBitmap = bmp;
                 mainHandler.post(() -> {
                     imagePreview.setImageBitmap(originalBitmap);
@@ -181,11 +159,10 @@ public class MainActivity extends AppCompatActivity {
                     downloadBtn.setVisibility(View.GONE);
                     tabUpscaled.setAlpha(0.5f);
                     upscaledBitmap = null;
-                    showingUpscaled = false;
                     switchTab(false);
                 });
             } catch (Exception e) {
-                mainHandler.post(() -> showToast("Error loading image: " + e.getMessage()));
+                mainHandler.post(() -> showToast("Error: " + e.getMessage()));
             }
         });
     }
@@ -193,10 +170,8 @@ public class MainActivity extends AppCompatActivity {
     private void setScale(int scale) {
         selectedScale = scale;
         statScale.setText(scale + "×");
-        int accent = getColor(R.color.accent);
         int white = getColor(R.color.white);
         int textSec = getColor(R.color.text_secondary);
-
         scale2x.setBackgroundResource(scale == 2 ? R.drawable.bg_scale_active : R.drawable.bg_scale_inactive);
         scale2x.setTextColor(scale == 2 ? white : textSec);
         scale3x.setBackgroundResource(scale == 3 ? R.drawable.bg_scale_active : R.drawable.bg_scale_inactive);
@@ -206,7 +181,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void switchTab(boolean upscaled) {
-        showingUpscaled = upscaled;
         if (upscaled && upscaledBitmap != null) {
             imagePreview.setImageBitmap(upscaledBitmap);
             badgeSize.setText(upscaledBitmap.getWidth() + "×" + upscaledBitmap.getHeight());
@@ -239,20 +213,14 @@ public class MainActivity extends AppCompatActivity {
         int detail = detailSlider.getProgress();
 
         String[][] steps = {
-            {"5", "Analyzing image structure…"},
-            {"15", "Extracting pixel data…"},
-            {"30", "Running super-resolution…"},
-            {"50", "Enhancing edges & details…"},
-            {"65", "Applying sharpening filter…"},
-            {"78", "Denoising pass…"},
-            {"88", "Reconstructing detail…"},
-            {"96", "Finalizing output…"},
+            {"10","Analyzing image…"},{"25","Running super-resolution…"},
+            {"50","Enhancing edges…"},{"70","Sharpening…"},
+            {"85","Denoising…"},{"95","Finalizing…"}
         };
 
         executor.execute(() -> {
-            // Animate progress
             for (String[] step : steps) {
-                try { Thread.sleep(280); } catch (InterruptedException e) { break; }
+                try { Thread.sleep(250); } catch (InterruptedException e) { break; }
                 int pct = Integer.parseInt(step[0]);
                 String label = step[1];
                 mainHandler.post(() -> {
@@ -262,14 +230,12 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
 
-            // Do the actual processing
             Bitmap result = performUpscale(originalBitmap, selectedScale, sharpness, denoise, detail);
 
             mainHandler.post(() -> {
                 progressBar.setProgress(100);
                 progressPct.setText("100%");
                 progressStep.setText("Done!");
-
                 mainHandler.postDelayed(() -> {
                     upscaledBitmap = result;
                     progressCard.setVisibility(View.GONE);
@@ -277,170 +243,110 @@ public class MainActivity extends AppCompatActivity {
                     downloadBtn.setVisibility(View.VISIBLE);
                     tabUpscaled.setAlpha(1f);
                     switchTab(true);
-                    showToast("✦ Image upscaled successfully!");
+                    showToast("✦ Upscaled successfully!");
                 }, 400);
             });
         });
     }
 
     private Bitmap performUpscale(Bitmap src, int scale, int sharpness, int denoise, int detail) {
-        int srcW = src.getWidth(), srcH = src.getHeight();
-        int dstW = srcW * scale, dstH = srcH * scale;
-
-        // Step 1: High quality bicubic upscale
-        Bitmap upscaled = Bitmap.createScaledBitmap(src, dstW, dstH, true);
-        upscaled = upscaled.copy(Bitmap.Config.ARGB_8888, true);
-
-        // Step 2: Get pixels for processing
+        int dstW = src.getWidth() * scale, dstH = src.getHeight() * scale;
+        Bitmap upscaled = Bitmap.createScaledBitmap(src, dstW, dstH, true).copy(Bitmap.Config.ARGB_8888, true);
         int[] pixels = new int[dstW * dstH];
         upscaled.getPixels(pixels, 0, dstW, 0, 0, dstW, dstH);
-
-        // Step 3: Denoise (selective blur)
-        if (denoise > 1) {
-            pixels = applyBoxBlurSelective(pixels, dstW, dstH, denoise);
-        }
-
-        // Step 4: Unsharp mask (sharpening)
-        if (sharpness > 1) {
-            pixels = applyUnsharpMask(pixels, dstW, dstH, sharpness, detail);
-        }
-
-        // Step 5: Contrast + saturation enhancement
+        if (denoise > 1) pixels = applyDenoise(pixels, dstW, dstH, denoise);
+        if (sharpness > 1) pixels = applyUnsharpMask(pixels, dstW, dstH, sharpness, detail);
         upscaled.setPixels(pixels, 0, dstW, 0, 0, dstW, dstH);
-
-        // Step 6: Apply color matrix for contrast/saturation boost
         Bitmap enhanced = applyColorEnhancement(upscaled, detail / 10f);
-
         if (enhanced != upscaled) upscaled.recycle();
         return enhanced;
     }
 
-    private int[] applyBoxBlurSelective(int[] pixels, int w, int h, int strength) {
+    private int[] applyDenoise(int[] pixels, int w, int h, int strength) {
         int[] out = pixels.clone();
         int r = Math.max(1, strength / 3);
         float blend = strength * 0.025f;
-
         for (int y = r; y < h - r; y++) {
             for (int x = r; x < w - r; x++) {
-                int rSum = 0, gSum = 0, bSum = 0, cnt = 0;
-                for (int dy = -r; dy <= r; dy++) {
-                    for (int dx = -r; dx <= r; dx++) {
-                        int p = pixels[(y + dy) * w + (x + dx)];
-                        rSum += (p >> 16) & 0xFF;
-                        gSum += (p >> 8) & 0xFF;
-                        bSum += p & 0xFF;
-                        cnt++;
-                    }
+                int rS=0,gS=0,bS=0,cnt=0;
+                for (int dy=-r;dy<=r;dy++) for (int dx=-r;dx<=r;dx++) {
+                    int p=pixels[(y+dy)*w+(x+dx)];
+                    rS+=(p>>16)&0xFF; gS+=(p>>8)&0xFF; bS+=p&0xFF; cnt++;
                 }
-                int orig = pixels[y * w + x];
-                int oR = (orig >> 16) & 0xFF, oG = (orig >> 8) & 0xFF, oB = orig & 0xFF;
-                int blurR = rSum / cnt, blurG = gSum / cnt, blurB = bSum / cnt;
-                // Only blend if pixel is noisy (variance check simplified)
-                int nR = clamp((int)(oR * (1 - blend) + blurR * blend));
-                int nG = clamp((int)(oG * (1 - blend) + blurG * blend));
-                int nB = clamp((int)(oB * (1 - blend) + blurB * blend));
-                out[y * w + x] = 0xFF000000 | (nR << 16) | (nG << 8) | nB;
+                int o=pixels[y*w+x];
+                int nR=clamp((int)(((o>>16)&0xFF)*(1-blend)+(rS/cnt)*blend));
+                int nG=clamp((int)(((o>>8)&0xFF)*(1-blend)+(gS/cnt)*blend));
+                int nB=clamp((int)((o&0xFF)*(1-blend)+(bS/cnt)*blend));
+                out[y*w+x]=0xFF000000|(nR<<16)|(nG<<8)|nB;
             }
         }
         return out;
     }
 
     private int[] applyUnsharpMask(int[] pixels, int w, int h, int sharpness, int detail) {
-        // Blur pass
         int[] blurred = pixels.clone();
-        int r = 2;
-        for (int y = r; y < h - r; y++) {
-            for (int x = r; x < w - r; x++) {
-                int rS = 0, gS = 0, bS = 0, cnt = 0;
-                for (int dy = -r; dy <= r; dy++) {
-                    for (int dx = -r; dx <= r; dx++) {
-                        int p = pixels[(y + dy) * w + (x + dx)];
-                        rS += (p >> 16) & 0xFF;
-                        gS += (p >> 8) & 0xFF;
-                        bS += p & 0xFF;
-                        cnt++;
-                    }
-                }
-                blurred[y * w + x] = 0xFF000000 | ((rS / cnt) << 16) | ((gS / cnt) << 8) | (bS / cnt);
+        int r=2;
+        for (int y=r;y<h-r;y++) for (int x=r;x<w-r;x++) {
+            int rS=0,gS=0,bS=0,cnt=0;
+            for (int dy=-r;dy<=r;dy++) for (int dx=-r;dx<=r;dx++) {
+                int p=pixels[(y+dy)*w+(x+dx)];
+                rS+=(p>>16)&0xFF; gS+=(p>>8)&0xFF; bS+=p&0xFF; cnt++;
             }
+            blurred[y*w+x]=0xFF000000|((rS/cnt)<<16)|((gS/cnt)<<8)|(bS/cnt);
         }
-
-        // Apply unsharp mask
-        int[] out = pixels.clone();
-        float amount = sharpness * 0.15f + detail * 0.06f;
-        for (int i = 0; i < pixels.length; i++) {
-            int p = pixels[i], b = blurred[i];
-            int pR = (p >> 16) & 0xFF, pG = (p >> 8) & 0xFF, pB = p & 0xFF;
-            int bR = (b >> 16) & 0xFF, bG = (b >> 8) & 0xFF, bB = b & 0xFF;
-            int nR = clamp((int)(pR + (pR - bR) * amount));
-            int nG = clamp((int)(pG + (pG - bG) * amount));
-            int nB = clamp((int)(pB + (pB - bB) * amount));
-            out[i] = 0xFF000000 | (nR << 16) | (nG << 8) | nB;
+        int[] out=pixels.clone();
+        float amount=sharpness*0.15f+detail*0.06f;
+        for (int i=0;i<pixels.length;i++) {
+            int p=pixels[i],b=blurred[i];
+            out[i]=0xFF000000|
+                (clamp((int)(((p>>16)&0xFF)+(((p>>16)&0xFF)-((b>>16)&0xFF))*amount))<<16)|
+                (clamp((int)(((p>>8)&0xFF)+(((p>>8)&0xFF)-((b>>8)&0xFF))*amount))<<8)|
+                clamp((int)((p&0xFF)+((p&0xFF)-(b&0xFF))*amount));
         }
         return out;
     }
 
-    private Bitmap applyColorEnhancement(Bitmap src, float detailStrength) {
+    private Bitmap applyColorEnhancement(Bitmap src, float strength) {
         Bitmap result = Bitmap.createBitmap(src.getWidth(), src.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(result);
         Paint paint = new Paint();
-
-        // Slightly boost contrast and saturation
-        float contrast = 1f + detailStrength * 0.15f;
-        float saturation = 1f + detailStrength * 0.12f;
+        float contrast = 1f + strength * 0.15f;
         float translate = (-0.5f * contrast + 0.5f) * 255f;
-
         ColorMatrix cm = new ColorMatrix();
-        // Saturation matrix
-        ColorMatrix sat = new ColorMatrix();
-        sat.setSaturation(saturation);
-        // Contrast matrix
+        ColorMatrix sat = new ColorMatrix(); sat.setSaturation(1f + strength * 0.12f);
         ColorMatrix con = new ColorMatrix(new float[]{
-            contrast, 0, 0, 0, translate,
-            0, contrast, 0, 0, translate,
-            0, 0, contrast, 0, translate,
-            0, 0, 0, 1, 0
-        });
-        cm.set(sat);
-        cm.postConcat(con);
-
+            contrast,0,0,0,translate, 0,contrast,0,0,translate,
+            0,0,contrast,0,translate, 0,0,0,1,0});
+        cm.set(sat); cm.postConcat(con);
         paint.setColorFilter(new ColorMatrixColorFilter(cm));
         canvas.drawBitmap(src, 0, 0, paint);
         return result;
     }
 
-    private int clamp(int v) {
-        return Math.max(0, Math.min(255, v));
-    }
+    private int clamp(int v) { return Math.max(0, Math.min(255, v)); }
 
     private void downloadImage() {
         if (upscaledBitmap == null) return;
-
         executor.execute(() -> {
             try {
-                String filename = "Crystalize_upscaled_" + selectedScale + "x_" + System.currentTimeMillis() + ".png";
-                OutputStream outputStream;
-
+                String filename = "Crystalize_" + selectedScale + "x_" + System.currentTimeMillis() + ".png";
+                OutputStream out;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     ContentValues values = new ContentValues();
                     values.put(MediaStore.Images.Media.DISPLAY_NAME, filename);
                     values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
                     values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Crystalize");
                     Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-                    outputStream = getContentResolver().openOutputStream(uri);
+                    out = getContentResolver().openOutputStream(uri);
                 } else {
-                    File dir = new File(Environment.getExternalStoragePublicDirectory(
-                            Environment.DIRECTORY_PICTURES), "Crystalize");
+                    java.io.File dir = new java.io.File(Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_PICTURES), "Crystalize");
                     dir.mkdirs();
-                    File file = new File(dir, filename);
-                    outputStream = new FileOutputStream(file);
+                    out = new java.io.FileOutputStream(new java.io.File(dir, filename));
                 }
-
-                upscaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
-                outputStream.flush();
-                outputStream.close();
-
-                mainHandler.post(() -> showToast("✦ Saved to Pictures/Crystalize!"));
+                upscaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                out.flush(); out.close();
+                mainHandler.post(() -> showToast("Saved to Pictures/Crystalize!"));
             } catch (IOException e) {
                 mainHandler.post(() -> showToast("Save failed: " + e.getMessage()));
             }
@@ -454,25 +360,17 @@ public class MainActivity extends AppCompatActivity {
         if (upscaledBitmap != null) { upscaledBitmap.recycle(); upscaledBitmap = null; }
         downloadBtn.setVisibility(View.GONE);
         progressCard.setVisibility(View.GONE);
-        showingUpscaled = false;
     }
 
-    private void showToast(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-    }
+    private void showToast(String msg) { Toast.makeText(this, msg, Toast.LENGTH_SHORT).show(); }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        executor.shutdown();
-    }
+    protected void onDestroy() { super.onDestroy(); executor.shutdown(); }
 
     static class SimpleSeekListener implements SeekBar.OnSeekBarChangeListener {
         private final TextView label;
         SimpleSeekListener(TextView label) { this.label = label; }
-        @Override public void onProgressChanged(SeekBar s, int progress, boolean fromUser) {
-            label.setText(String.valueOf(progress));
-        }
+        @Override public void onProgressChanged(SeekBar s, int p, boolean f) { label.setText(String.valueOf(p)); }
         @Override public void onStartTrackingTouch(SeekBar s) {}
         @Override public void onStopTrackingTouch(SeekBar s) {}
     }
