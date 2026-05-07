@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/surface"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="52dp"
+            android:paddingBottom="20dp"
+            android:elevation="2dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_logo"
+                    android:src="@drawable/ic_crystal"
+                    android:padding="10dp"
+                    android:layout_marginEnd="12dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Crystalize"
+                    android:textSize="26sp"
+                    android:textColor="@color/text_primary"
+                    android:fontFamily="serif"
+                    android:letterSpacing="-0.02" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AI image upscaler · free · private"
+                android:textSize="13sp"
+                android:textColor="@color/text_tertiary"
+                android:fontFamily="monospace" />
+        </LinearLayout>
+
+        <!-- Main content -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Drop Zone / Pick Image -->
+            <LinearLayout
+                android:id="@+id/dropZone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/bg_drop_zone"
+                android:padding="40dp"
+                android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:background="@drawable/bg_circle_accent"
+                    android:src="@drawable/ic_image"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tap to pick an image"
+                    android:textSize="18sp"
+                    android:textColor="@color/text_primary"
+                    android:fontFamily="serif"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="JPG, PNG, WEBP · any resolution\nblurry, noisy, pixelated — bring it on"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_tertiary"
+                    android:fontFamily="monospace"
+                    android:gravity="center"
+                    android:lineSpacingExtra="4dp"
+                    android:layout_marginBottom="20dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Choose Image"
+                    android:textSize="14sp"
+                    android:textColor="@color/white"
+                    android:fontFamily="monospace"
+                    android:background="@drawable/bg_button_accent"
+                    android:paddingStart="28dp"
+                    android:paddingEnd="28dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp" />
+            </LinearLayout>
+
+            <!-- Preview Section (hidden initially) -->
+            <LinearLayout
+                android:id="@+id/previewSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Image Preview Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:layout_marginBottom="12dp">
+
+                    <!-- Tabs -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:orientation="horizontal"
+                        android:background="@color/surface">
+
+                        <TextView
+                            android:id="@+id/tabOriginal"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:text="Original"
+                            android:gravity="center"
+                            android:textSize="13sp"
+                            android:fontFamily="monospace"
+                            android:textColor="@color/accent"
+                            android:background="@drawable/bg_tab_active"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/tabUpscaled"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:text="Upscaled"
+                            android:gravity="center"
+                            android:textSize="13sp"
+                            android:fontFamily="monospace"
+                            android:textColor="@color/text_tertiary"
+                            android:background="@color/surface"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:alpha="0.5" />
+                    </LinearLayout>
+
+                    <!-- Image display -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="300dp"
+                        android:background="#1a1916">
+
+                        <ImageView
+                            android:id="@+id/imagePreview"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="fitCenter"
+                            android:adjustViewBounds="true" />
+
+                        <TextView
+                            android:id="@+id/badgeSize"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="10dp"
+                            android:text="original"
+                            android:textSize="11sp"
+                            android:textColor="@color/white"
+                            android:fontFamily="monospace"
+                            android:background="@drawable/bg_badge_dark"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp" />
+
+                        <TextView
+                            android:id="@+id/badgeEnhanced"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="top|start"
+                            android:layout_margin="10dp"
+                            android:text="✦ enhanced"
+                            android:textSize="11sp"
+                            android:textColor="@color/white"
+                            android:fontFamily="monospace"
+                            android:background="@drawable/bg_badge_green"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"
+                            android:visibility="gone" />
+                    </FrameLayout>
+                </LinearLayout>
+
+                <!-- Stats Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_stat"
+                        android:gravity="center"
+                        android:padding="12dp"
+                        android:layout_marginEnd="4dp">
+                        <TextView android:id="@+id/statW" android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" android:text="—"
+                            android:textSize="16sp" android:textColor="@color/text_primary"
+                            android:fontFamily="serif" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="width px" android:textSize="10sp"
+                            android:textColor="@color/text_tertiary" android:fontFamily="monospace" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_stat"
+                        android:gravity="center"
+                        android:padding="12dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp">
+                        <TextView android:id="@+id/statH" android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" android:text="—"
+                            android:textSize="16sp" android:textColor="@color/text_primary"
+                            android:fontFamily="serif" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="height px" android:textSize="10sp"
+                            android:textColor="@color/text_tertiary" android:fontFamily="monospace" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_stat"
+                        android:gravity="center"
+                        android:padding="12dp"
+                        android:layout_marginStart="4dp">
+                        <TextView android:id="@+id/statScale" android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" android:text="2×"
+                            android:textSize="16sp" android:textColor="@color/accent"
+                            android:fontFamily="serif" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="scale" android:textSize="10sp"
+                            android:textColor="@color/text_tertiary" android:fontFamily="monospace" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Controls Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="16dp"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Upscale Factor"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_primary"
+                        android:fontFamily="monospace"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Scale buttons -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="20dp">
+
+                        <TextView
+                            android:id="@+id/scale2x"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:text="2×"
+                            android:gravity="center"
+                            android:textSize="14sp"
+                            android:textColor="@color/white"
+                            android:fontFamily="monospace"
+                            android:background="@drawable/bg_scale_active"
+                            android:layout_marginEnd="6dp"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/scale3x"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:text="3×"
+                            android:gravity="center"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_secondary"
+                            android:fontFamily="monospace"
+                            android:background="@drawable/bg_scale_inactive"
+                            android:layout_marginEnd="6dp"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/scale4x"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:text="4×"
+                            android:gravity="center"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_secondary"
+                            android:fontFamily="monospace"
+                            android:background="@drawable/bg_scale_inactive"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- Sharpness -->
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginBottom="4dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Sharpness"
+                            android:textSize="13sp" android:textColor="@color/text_secondary"
+                            android:fontFamily="monospace" />
+                        <TextView android:id="@+id/sharpVal" android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" android:text="6"
+                            android:textSize="13sp" android:textColor="@color/accent"
+                            android:fontFamily="monospace" />
+                    </LinearLayout>
+                    <SeekBar android:id="@+id/sharpSlider" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:max="10" android:progress="6"
+                        android:progressTint="@color/accent" android:thumbTint="@color/accent"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- Denoise -->
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginBottom="4dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Denoise"
+                            android:textSize="13sp" android:textColor="@color/text_secondary"
+                            android:fontFamily="monospace" />
+                        <TextView android:id="@+id/denoiseVal" android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" android:text="5"
+                            android:textSize="13sp" android:textColor="@color/accent"
+                            android:fontFamily="monospace" />
+                    </LinearLayout>
+                    <SeekBar android:id="@+id/denoiseSlider" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:max="10" android:progress="5"
+                        android:progressTint="@color/accent" android:thumbTint="@color/accent"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- Detail -->
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginBottom="4dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Detail Enhance"
+                            android:textSize="13sp" android:textColor="@color/text_secondary"
+                            android:fontFamily="monospace" />
+                        <TextView android:id="@+id/detailVal" android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" android:text="7"
+                            android:textSize="13sp" android:textColor="@color/accent"
+                            android:fontFamily="monospace" />
+                    </LinearLayout>
+                    <SeekBar android:id="@+id/detailSlider" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:max="10" android:progress="7"
+                        android:progressTint="@color/accent" android:thumbTint="@color/accent" />
+                </LinearLayout>
+
+                <!-- Upscale Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/upscaleBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="58dp"
+                    android:text="Upscale Image"
+                    android:textSize="16sp"
+                    android:fontFamily="serif"
+                    android:textColor="@color/white"
+                    android:backgroundTint="@color/accent"
+                    app:cornerRadius="29dp"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Progress Card -->
+                <LinearLayout
+                    android:id="@+id/progressCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="16dp"
+                    android:layout_marginBottom="12dp"
+                    android:visibility="gone">
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginBottom="10dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Processing…"
+                            android:textSize="13sp" android:textColor="@color/text_secondary"
+                            android:fontFamily="monospace" />
+                        <TextView android:id="@+id/progressPct" android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" android:text="0%"
+                            android:textSize="13sp" android:textColor="@color/accent"
+                            android:fontFamily="monospace" />
+                    </LinearLayout>
+
+                    <ProgressBar
+                        android:id="@+id/progressBar"
+                        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="6dp"
+                        android:progressTint="@color/accent"
+                        android:progressBackgroundTint="@color/border"
+                        android:max="100"
+                        android:progress="0"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:id="@+id/progressStep"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Preparing…"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_tertiary"
+                        android:fontFamily="monospace" />
+                </LinearLayout>
+
+                <!-- Download Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/downloadBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Download Upscaled Image"
+                    android:textSize="14sp"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/white"
+                    android:backgroundTint="@color/success"
+                    app:cornerRadius="28dp"
+                    android:layout_marginBottom="12dp"
+                    android:visibility="gone" />
+
+                <!-- Reset link -->
+                <TextView
+                    android:id="@+id/resetLink"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="↩ Start over with new image"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_tertiary"
+                    android:fontFamily="monospace"
+                    android:gravity="center"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="24dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
