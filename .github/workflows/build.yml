@@ -17,6 +17,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Force Gradle 8.4
+        run: |
+          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+          networkTimeout=10000
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+
       - name: Make gradlew executable
         run: chmod +x gradlew
 
